@@ -1,3 +1,3 @@
 import os
 
-os.environ["CONNECT_SERVER"] = 'https://colorado.rstudio.com/rsc'
+os.environ["CONNECT_SERVER"] = "https://colorado.rstudio.com/rsc"

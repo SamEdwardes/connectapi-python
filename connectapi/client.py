@@ -1,6 +1,7 @@
+from typing import Optional
+
 import httpx
 from pydantic import BaseSettings, validator
-from typing import Optional
 
 
 class Client(BaseSettings):
@@ -15,7 +16,7 @@ class Client(BaseSettings):
     @validator("api_endpoint")
     def validate_api_endpoint(cls, v, values):
         if v is None:
-            connect_server = values.get('connect_server')
+            connect_server = values.get("connect_server")
             return f"{connect_server}/__api__/v1"
         else:
             return v
@@ -23,6 +24,6 @@ class Client(BaseSettings):
     def create_client(self) -> httpx.Client:
         client = httpx.Client(
             base_url=self.api_endpoint,
-            headers={'Authorization': f"Key {self.connect_api_key}"}
+            headers={"Authorization": f"Key {self.connect_api_key}"},
         )
         return client

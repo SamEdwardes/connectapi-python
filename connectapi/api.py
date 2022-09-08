@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from .models.content import ContentApi
-from .client import Client
 from typing import Optional
+
+from .client import Client
+from .models.content import ContentApi
 
 
 @dataclass
@@ -16,5 +17,3 @@ class Api:
         with self.client.create_client() as client:
             r = client.get(url=url, params=params)
         return r
-
-
