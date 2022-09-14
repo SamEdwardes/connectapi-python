@@ -1,0 +1,15 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: index.ipynb
+chapters:
+# Tutorials
+- file: tutorials/index.md
+  sections:
+  - file: tutorials/api.md
+# Reference
+- file: reference/index.rst
+  sections:
+  - file: reference/client.rst
+  - file: reference/api.rst
