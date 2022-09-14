@@ -2,18 +2,30 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from .client import Client
-from .models.content import ContentApi
+from .content import ContentEndpoint
 
 
 @dataclass
 class Api:
     client: Client = field(default_factory=Client)
-    content: ContentApi = field(init=False)
+    content: ContentEndpoint = field(init=False)
+
+    """Create an interface for calling the Connect API.
+
+    The `Api` class provides the primary interface for calling the Connect API.
+
+    Params
+    ------
+    client: Client
+        An instance of the Client class.
+
+    Methods
+    -------
+    content: model.Content
+        Exposes the `Content` class for querying `content` api endpoints.
+    
+    """    
 
     def __post_init__(self):
-        self.content = ContentApi(self.client)
-
-    def _call(self, url: str, params: Optional[dict] = None):
-        with self.client.create_client() as client:
-            r = client.get(url=url, params=params)
-        return r
+        print("Initiating client")
+        self.content = ContentEndpoint(self.client)

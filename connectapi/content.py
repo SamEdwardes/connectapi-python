@@ -5,7 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from rich import inspect, print
 
-from ..client import Client
+from .client import Client
 
 
 class Content(BaseModel):
@@ -43,18 +43,31 @@ class Content(BaseModel):
 
 
 @dataclass
-class ContentApi:
+class ContentEndpoint:
+    """ Get information related to your content deployed on Connect.
+
+    The ContentEndpoint class mirrors the endpoints described in 
+    https://docs.rstudio.com/connect/api/#tag--Content.
+    """    
     client: Client
 
-    def get_details(self, guid: str) -> Content:
-        with self.client.create_client() as api:
-            r = api.get(url=f"/content/{guid}")
-        r.raise_for_status()
-        return Content(**r.json())
-
-    def get_content(
+    def list_items(
         self, owner_guid: Optional[str] = None, name: Optional[str] = None
     ) -> List[Content]:
+        """_summary_
+
+        Parameters
+        ----------
+        owner_guid : Optional[str], optional
+            _description_, by default None
+        name : Optional[str], optional
+            _description_, by default None
+
+        Returns
+        -------
+        List[Content]
+            _description_
+        """        
         class Params(BaseModel):
             owner_guid: Optional[str] = None
             name: Optional[str] = None
@@ -65,3 +78,22 @@ class ContentApi:
 
         r.raise_for_status()
         return [Content(**i) for i in r.json()]
+    
+    def get_details(self, guid: str) -> Content:
+        """_summary_
+
+        Parameters
+        ----------
+        guid : str
+            _description_
+
+        Returns
+        -------
+        Content
+            _description_
+        """
+        with self.client.create_client() as api:
+            r = api.get(url=f"/content/{guid}")
+        r.raise_for_status()
+        return Content(**r.json())
+
