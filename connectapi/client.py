@@ -1,5 +1,6 @@
 import os
 from typing import Optional
+from textwrap import dedent
 
 import httpx
 
@@ -46,17 +47,40 @@ class Client(httpx.Client):
         if connect_server is None:
             connect_server = os.getenv("CONNECT_SERVER")
         connect_server = connect_server.rstrip("/")
+        self.connect_server = connect_server
 
         # Validate connect_api_key
         if connect_api_key is None:
             connect_api_key = os.getenv("CONNECT_API_KEY")
+        self.connect_api_key = connect_api_key
 
         # Validate api_endpoint
         if api_endpoint is None:
             api_endpoint = f"{connect_server}/__api__/v1"
+        self.api_endpoint = api_endpoint
  
         # Set up httpx.Client
         super().__init__(
             base_url=api_endpoint,
             headers={"Authorization": f"Key {connect_api_key}"}
+        )
+
+    def __str__(self):
+        output = f"""
+            Client(
+                connect_server='{self.connect_server}',
+                connect_api_key='XXXXXXXX',
+                api_endpoint='{self.api_endpoint}',
+            )
+        """
+        return dedent(output)
+
+    def __repr__(self):
+        output = self.__str__()
+        return (
+            output
+            .replace(",\n", ", ")
+            .replace("\n", "")
+            .replace("    ", "")
+            .replace(", )", ")")
         )
