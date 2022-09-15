@@ -11,5 +11,4 @@ chapters:
 # Reference
 - file: reference/index.rst
   sections:
-  - file: reference/client.rst
   - file: reference/api.rst
