@@ -1,11 +1,12 @@
 import datetime as dt
-from dataclasses import dataclass
 from typing import List, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
 import httpx
+from pydantic import BaseModel, Field
 from rich import inspect, print
+
+from .client import Client
 
 
 class ContentBase(BaseModel):
@@ -43,7 +44,7 @@ class ContentBase(BaseModel):
 
 
 class Content(ContentBase):
-    client: httpx.Client
+    client: Client
 
     class Config:
         arbitrary_types_allowed = True
@@ -64,139 +65,134 @@ class Content(ContentBase):
         return self
 
 
+# class ContentEndpoint:
+#     """ Get information related to your content deployed on Connect.
 
+#     The ContentEndpoint class mirrors the endpoints described in 
+#     https://docs.rstudio.com/connect/api/#tag--Content.
 
+#     Params
+#     ------
+#     client: httpx.Client
+#         An httpx.Client object.
+#     """
+#     def __init__(self, client: httpx.Client):
+#         self.client = client
 
+#     def list_items(
+#         self, owner_guid: Optional[str] = None, name: Optional[str] = None
+#     ) -> List[Content]:
+#         """List all content items visible to the requesting user.
 
+#         Authenticated access from a user is required. If an "administrator" role 
+#         is used, then all content items will be returned regardless of the 
+#         visibility to the requesting user.
 
-class ContentEndpoint:
-    """ Get information related to your content deployed on Connect.
+#         Information about the target environment is populated for users with 
+#         "publisher" and "administrator" role; it is suppressed for viewers.
 
-    The ContentEndpoint class mirrors the endpoints described in 
-    https://docs.rstudio.com/connect/api/#tag--Content.
+#         See the official API docs for more details:
+#         https://docs.rstudio.com/connect/api/#get-/v1/content.
 
-    Params
-    ------
-    client: httpx.Client
-        An httpx.Client object.
-    """
-    def __init__(self, client: httpx.Client):
-        self.client = client
+#         Parameters
+#         ----------
+#         owner_guid : Optional[str], optional
+#             The unique identifier of the user who owns the content. By default None
+#         name : Optional[str], 
+#             The content name specified when the content was created. Content 
+#             names are unique within the owning user's account, so a request that 
+#             specifies a non-empty name and owner_guid will return at most one 
+#             content item.
 
-    def list_items(
-        self, owner_guid: Optional[str] = None, name: Optional[str] = None
-    ) -> List[Content]:
-        """List all content items visible to the requesting user.
+#         Returns
+#         -------
+#         List[Content]
+#             A list of Content objects.
+#         """        
+#         class Params(BaseModel):
+#             owner_guid: Optional[str] = None
+#             name: Optional[str] = None
 
-        Authenticated access from a user is required. If an "administrator" role 
-        is used, then all content items will be returned regardless of the 
-        visibility to the requesting user.
+#         with self.client as client:
+#             params = Params(owner_guid=owner_guid, name=name)
+#             r = client.get(url="/content", params=params.dict(exclude_none=True))
 
-        Information about the target environment is populated for users with 
-        "publisher" and "administrator" role; it is suppressed for viewers.
+#         r.raise_for_status()
+#         return [Content(**i) for i in r.json()]
 
-        See the official API docs for more details:
-        https://docs.rstudio.com/connect/api/#get-/v1/content.
+#     def create_item(
+#         self,
+#         name: str,
+#         title: str,
+#         description: str,
+#         access_type: str,
+#         connection_timeout: int,
+#         read_timeout: int,
+#         init_timeout: int,
+#         idle_timeout: int,
+#         max_processes: int,
+#         min_processes: int,
+#         max_conns_per_process: int,
+#         load_factor: float,
+#         run_as: str,
+#         run_as_current_user: str
+#     ):
+#         class Data(BaseModel):
+#             name: str
+#             title: str
+#             description: str
+#             access_type: str
+#             connection_timeout: int
+#             read_timeout: int
+#             init_timeout: int
+#             idle_timeout: int
+#             max_processes: int
+#             min_processes: int
+#             max_conns_per_process: int
+#             load_factor: float
+#             run_as: str
+#             run_as_current_user: str
 
-        Parameters
-        ----------
-        owner_guid : Optional[str], optional
-            The unique identifier of the user who owns the content. By default None
-        name : Optional[str], 
-            The content name specified when the content was created. Content 
-            names are unique within the owning user's account, so a request that 
-            specifies a non-empty name and owner_guid will return at most one 
-            content item.
+#         with self.client as client:
+#             data = Data(
+#                 name=name,
+#                 title=title,
+#                 description=description,
+#                 access_type=access_type,
+#                 connection_timeout=connection_timeout,
+#                 read_timeout=read_timeout,
+#                 init_timeout=init_timeout,
+#                 idle_timeout=idle_timeout,
+#                 max_processes=max_processes,
+#                 min_processes=min_processes,
+#                 max_conns_per_process=max_conns_per_process,
+#                 load_factor=load_factor,
+#                 run_as=run_as,
+#                 run_as_current_user=run_as_current_user
+#             )
+#             r = client.post(url="/content", data=data.dict(exclude_none=True))
 
-        Returns
-        -------
-        List[Content]
-            A list of Content objects.
-        """        
-        class Params(BaseModel):
-            owner_guid: Optional[str] = None
-            name: Optional[str] = None
-
-        with self.client as client:
-            params = Params(owner_guid=owner_guid, name=name)
-            r = client.get(url="/content", params=params.dict(exclude_none=True))
-
-        r.raise_for_status()
-        return [Content(**i) for i in r.json()]
-
-    def create_item(
-        self,
-        name: str,
-        title: str,
-        description: str,
-        access_type: str,
-        connection_timeout: int,
-        read_timeout: int,
-        init_timeout: int,
-        idle_timeout: int,
-        max_processes: int,
-        min_processes: int,
-        max_conns_per_process: int,
-        load_factor: float,
-        run_as: str,
-        run_as_current_user: str
-    ):
-        class Data(BaseModel):
-            name: str
-            title: str
-            description: str
-            access_type: str
-            connection_timeout: int
-            read_timeout: int
-            init_timeout: int
-            idle_timeout: int
-            max_processes: int
-            min_processes: int
-            max_conns_per_process: int
-            load_factor: float
-            run_as: str
-            run_as_current_user: str
-
-        with self.client as client:
-            data = Data(
-                name=name,
-                title=title,
-                description=description,
-                access_type=access_type,
-                connection_timeout=connection_timeout,
-                read_timeout=read_timeout,
-                init_timeout=init_timeout,
-                idle_timeout=idle_timeout,
-                max_processes=max_processes,
-                min_processes=min_processes,
-                max_conns_per_process=max_conns_per_process,
-                load_factor=load_factor,
-                run_as=run_as,
-                run_as_current_user=run_as_current_user
-            )
-            r = client.post(url="/content", data=data.dict(exclude_none=True))
-
-        r.raise_for_status()
-        return r
+#         r.raise_for_status()
+#         return r
     
-    def get_details(self, guid: str) -> Content:
-        """_summary_
+#     def get_details(self, guid: str) -> Content:
+#         """_summary_
 
-        Parameters
-        ----------
-        guid : str
-            _description_
+#         Parameters
+#         ----------
+#         guid : str
+#             _description_
 
-        See the official API docs for more details: 
-        https://docs.rstudio.com/connect/api/#get-/v1/content/%7Bguid%7D
+#         See the official API docs for more details: 
+#         https://docs.rstudio.com/connect/api/#get-/v1/content/%7Bguid%7D
 
-        Returns
-        -------
-        Content
-            _description_
-        """
-        with self.client as client:
-            r = client.get(url=f"/content/{guid}")
-        r.raise_for_status()
-        return Content(**r.json())
+#         Returns
+#         -------
+#         Content
+#             _description_
+#         """
+#         with self.client as client:
+#             r = client.get(url=f"/content/{guid}")
+#         r.raise_for_status()
+#         return Content(**r.json())
 
