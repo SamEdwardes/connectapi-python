@@ -49,20 +49,53 @@ class Content(ContentBase):
     class Config:
         arbitrary_types_allowed = True
 
-    def create(self):
-        print("Creating a new content on Connect...")
-        with self.client as client:
-            data = self.json(exclude_none=True, exclude={"client"})
+    @classmethod
+    def create(
+        cls,
+        client: Client,
+        title: str,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        access_type: Optional[str] = 'acl',
+        connection_timeout: Optional[int] = None,
+        read_timeout: Optional[int] = None,
+        init_timeout: Optional[int] = None,
+        idle_timeout: Optional[int] = None,
+        max_processes: Optional[int] = None,
+        min_processes: Optional[int] = None,
+        max_conns_per_process: Optional[int] = None,
+        load_factor: Optional[float] = None,
+        run_as: Optional[str] = None,
+        run_as_current_user: bool = False
+    ):
+        with client as cl:
+            content = ContentBase(
+                title=title,
+                description=description,
+                name=name,
+                access_type=access_type,
+                connection_timeout=connection_timeout,
+                read_timeout=read_timeout,
+                init_timeout=init_timeout,
+                idle_timeout=idle_timeout,
+                max_processes=max_processes,
+                min_processes=min_processes,
+                max_conns_per_process=max_conns_per_process,
+                load_factor=load_factor,
+                run_as=run_as,
+                run_as_current_user=run_as_current_user,
+            )
+            data = content.json(exclude_none=True)
             print(f"{data=}")
-            r = client.post(url="/content", data=data)
-        print(r)
+            r = cl.post(url="/content", data=data)
+            inspect(r)
+
         r.raise_for_status()
-
-        response_data = ContentBase(**r.json())
-        for key, value in response_data.dict(exclude_none=True).items():
-            setattr(self, key, value)
-
-        return self
+   
+        return cls(
+            client=client,
+            **r.json()
+        )
 
 
 # class ContentEndpoint:

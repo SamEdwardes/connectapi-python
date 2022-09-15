@@ -30,9 +30,12 @@ class Client(httpx.Client):
     Examples
     --------
     Create a client that relies on the environment variables being set.
+
     >>> from connectapi import Client
     >>> client = Client()
+
     Create a client by manually specifying the parameters.
+    
     >>> from connectapi import Client
     >>> client = Client(connect_api_key="XXXX", connect_server="https://colorado.rstudio.com/rsc")
     """    

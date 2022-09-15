@@ -1,8 +1,33 @@
-# import pytest
-# from httpx import HTTPStatusError
+from uuid import uuid4
 
-# from connectapi import Api
-# from connectapi.content import Content
+import pytest
+from connectapi import Client, Content
+from httpx import HTTPStatusError
+
+
+def test_content_create():
+    client = Client()
+    data = {
+        'access_type': 'acl',
+        'connection_timeout': 3600,
+        'description': 'This report calculates per-team statistics ...',
+        'idle_timeout': 5,
+        'init_timeout': 60,
+        'load_factor': 0.5,
+        'max_conns_per_process': 20,
+        'max_processes': 3,
+        'min_processes': 0,
+        'name': str(uuid4()),
+        'read_timeout': 3600,
+        'run_as': 'rstudio-connect',
+        'run_as_current_user': False,
+        'title': 'Quarterly Analysis of Team Velocity'
+    }
+    content = Content.create(client, **data)
+    assert isinstance(content, Content)
+    assert content.description == 'This report calculates per-team statistics ...'
+    assert content.title == 'Quarterly Analysis of Team Velocity'
+
 
 
 # def test_list_items():
