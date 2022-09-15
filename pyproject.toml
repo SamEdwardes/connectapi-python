@@ -1,9 +1,12 @@
 [tool.poetry]
 name = "connectapi"
-version = "0.1.0"
-description = "A Python pacakge for interacting with the Posit Connect Server API"
+version = "0.1.1a0"
+description = "A Python påackage for interacting with the Posit Connect Server API"
 authors = ["SamEdwardes <sam.edwardes@rstudio.com>"]
 readme = "README.md"
+documentation = "https://github.com/SamEdwardes/connectapi-python"
+repository = "https://github.com/SamEdwardes/connectapi-python"
+keywords = ["rstudio", "connect", "posit", "api"]
 
 [tool.poetry.dependencies]
 python = "^3.9"

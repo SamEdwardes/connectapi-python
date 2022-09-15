@@ -1,11 +1,11 @@
 import os
-from typing import Optional
 from textwrap import dedent
+from typing import Optional
 
 import httpx
 
 
-class Client(httpx.Client):
+class Client:
     """Create a connection to the Connect server.
     
     Params
@@ -35,7 +35,7 @@ class Client(httpx.Client):
     >>> client = Client()
 
     Create a client by manually specifying the parameters.
-    
+
     >>> from connectapi import Client
     >>> client = Client(connect_api_key="XXXX", connect_server="https://colorado.rstudio.com/rsc")
     """    
@@ -61,14 +61,14 @@ class Client(httpx.Client):
         if api_endpoint is None:
             api_endpoint = f"{connect_server}/__api__/v1"
         self.api_endpoint = api_endpoint
- 
-        # Set up httpx.Client
-        super().__init__(
-            base_url=api_endpoint,
-            headers={"Authorization": f"Key {connect_api_key}"}
+
+    def __call__(self) -> httpx.Client:
+        return httpx.Client(
+            base_url=self.api_endpoint,
+            headers={"Authorization": f"Key {self.connect_api_key}"}
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         output = f"""
             Client(
                 connect_server='{self.connect_server}',
@@ -78,7 +78,7 @@ class Client(httpx.Client):
         """
         return dedent(output)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         output = self.__str__()
         return (
             output

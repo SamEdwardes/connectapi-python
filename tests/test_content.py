@@ -29,6 +29,40 @@ def test_content_create():
     assert content.title == 'Quarterly Analysis of Team Velocity'
 
 
+def test_get_with_owner_guid():
+    client = Client()
+    contents = Content.get(client, owner_guid="d03a6b7a-c818-4e40-8ef9-84ca567f9671")
+    assert len(contents) > 1
+    assert isinstance(contents, list)
+    assert isinstance(contents[0], Content)
+
+
+def test_get_no_owner_guid():
+    client = Client()
+    contents = Content.get(client)
+    assert len(contents) > 1
+    assert isinstance(contents, list)
+    assert isinstance(contents[0], Content)
+
+
+def test_get_with_owner_guid_2_calls():
+    client = Client()
+    contents_1 = Content.get(client, owner_guid="d03a6b7a-c818-4e40-8ef9-84ca567f9671")
+    contents_2 = Content.get(client, owner_guid="d03a6b7a-c818-4e40-8ef9-84ca567f9671")
+    assert len(contents_1) == len(contents_2)
+
+
+def test_get_one():
+    client = Client()
+    guid = "241fe2cd-6eba-4a79-9aa3-6e6fe28c5714"
+    content = Content.get_one(client, content_guid=guid)
+    assert isinstance(content, Content)
+    assert content.guid == guid
+
+
+
+
+
 
 # def test_list_items():
 #     api = Api()
