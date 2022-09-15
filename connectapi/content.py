@@ -1,18 +1,19 @@
 import datetime as dt
 from dataclasses import dataclass
 from typing import List, Optional
+from uuid import uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import httpx
 from rich import inspect, print
 
 
-class Content(BaseModel):
-    guid: str
+class ContentBase(BaseModel):
+    guid: Optional[str] = None
     name: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
-    access_type: str
+    access_type: Optional[str] = None
     connection_timeout: Optional[int] = None
     read_timeout: Optional[int] = None
     init_timeout: Optional[int] = None
@@ -21,11 +22,11 @@ class Content(BaseModel):
     min_processes: Optional[int] = None
     max_conns_per_process: Optional[int] = None
     load_factor: Optional[float] = None
-    created_time: dt.datetime
-    last_deployed_time: dt.datetime
-    bundle_id: str
-    app_mode: str
-    content_category: str
+    created_time: Optional[dt.datetime] = None
+    last_deployed_time: Optional[dt.datetime] = None
+    bundle_id: Optional[str] = None
+    app_mode: Optional[str] = None
+    content_category: Optional[str] = None
     parameterized: Optional[bool] = None
     cluster_name: Optional[str] = None
     image_name: Optional[str] = None
@@ -33,12 +34,39 @@ class Content(BaseModel):
     py_version: Optional[str] = None
     quarto_version: Optional[str] = None
     run_as: Optional[str] = None
-    run_as_current_user: bool
-    owner_guid: str
-    content_url: str
-    dashboard_url: str
+    run_as_current_user: bool = False
+    owner_guid: Optional[str] = None
+    content_url: Optional[str] = None
+    dashboard_url: Optional[str] = None
     role: Optional[str] = None
     id: Optional[str] = None
+
+
+class Content(ContentBase):
+    client: httpx.Client
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def create(self):
+        print("Creating a new content on Connect...")
+        with self.client as client:
+            data = self.json(exclude_none=True, exclude={"client"})
+            print(f"{data=}")
+            r = client.post(url="/content", data=data)
+        print(r)
+        r.raise_for_status()
+
+        response_data = ContentBase(**r.json())
+        for key, value in response_data.dict(exclude_none=True).items():
+            setattr(self, key, value)
+
+        return self
+
+
+
+
+
 
 
 class ContentEndpoint:
