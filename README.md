@@ -2,10 +2,15 @@
 
 > **WARNING:** this library is under active development and should not be used for production. The API will change and documentation could be wrong or incomplete.
 
+A Python package for interacting with the Posit Connect Server API.
+
+- Source code: <https://github.com/SamEdwardes/connectapi-python>
+- Docs: <https://connectapi-python.netlify.app>
+
 ## Installation
 
 ```bash
-pip install connectapi
+pip install git+https://github.com/SamEdwardes/connectapi-python.git
 ```
 
 ## Usage
