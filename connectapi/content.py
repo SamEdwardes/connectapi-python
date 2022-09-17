@@ -8,6 +8,7 @@ from rich import inspect, print
 
 from ._utils import remove_none_from_dict
 from .client import Client
+from .user import _UserBase
 
 
 class ContentBase(BaseModel):
@@ -154,10 +155,7 @@ class Content(ContentBase):
             r = _client.post(url="/content", data=data)
 
         r.raise_for_status()
-        return cls(
-            client=client,
-            **r.json()
-        )
+        return cls(client=client, **r.json())
     
     @classmethod
     def get(
@@ -167,7 +165,7 @@ class Content(ContentBase):
     ) -> List[Content]:
         with client() as _client:
             params = remove_none_from_dict({"owner_guid": owner_guid})
-            r = _client.get("/content/", params=params)
+            r = _client.get("/content", params=params)
         r.raise_for_status()
         return [Content(client=client, **i) for i in r.json()]
     
@@ -181,6 +179,14 @@ class Content(ContentBase):
             r = _client.get(f"/content/{content_guid}")
         r.raise_for_status()
         return Content(client=client, **r.json())
+    
+    @classmethod
+    def get_my_content(cls, client: Client) -> Content:
+        with client() as _client:
+            my_guid = _UserBase(**_client.get("/user").json()).guid
+            r = _client.get(f"/content", params={"owner_guid": my_guid})
+        r.raise_for_status()
+        return [Content(client=client, **i) for i in r.json()]
 
 
 # class ContentEndpoint:
