@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 import datetime as dt
 from .client import Client
-# from .content import Content
 
 
 class _UserBase(BaseModel):
@@ -18,6 +19,7 @@ class _UserBase(BaseModel):
     locked: bool
 
 
+
 class User(_UserBase):
     client: Client
 
@@ -25,16 +27,16 @@ class User(_UserBase):
         arbitrary_types_allowed = True
 
     @classmethod
-    def whoami(cls, client: Client):
+    def whoami(cls, client: Client) -> User:
         with client() as _client:
             r = _client.get("/user")
         r.raise_for_status()
         return User(client=client, **r.json())
 
-    # @classmethod
-    # def get_my_content(cls, client: Client) -> Content:
-    #     with client() as _client:
-    #         my_guid = _UserBase(**_client.get("/user").json()).guid
-    #         r = _client.get(f"/content", params={"owner_guid": my_guid})
-    #     r.raise_for_status()
-    #     return [Content(client=client, **i) for i in r.json()]
+    def get_my_content(self):
+        from .content import Content
+        with self.client() as _client:
+            my_guid = _UserBase(**_client.get("/user").json()).guid
+            r = _client.get(f"/content", params={"owner_guid": my_guid})
+        r.raise_for_status()
+        return [Content(client=self.client, **i) for i in r.json()]

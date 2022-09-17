@@ -45,11 +45,11 @@ def test_get_no_owner_guid():
     assert isinstance(contents[0], Content)
 
 
-def test_get_with_owner_guid_2_calls():
-    client = Client()
-    contents_1 = Content.get(client, owner_guid="d03a6b7a-c818-4e40-8ef9-84ca567f9671")
-    contents_2 = Content.get(client, owner_guid="d03a6b7a-c818-4e40-8ef9-84ca567f9671")
-    assert len(contents_1) == len(contents_2)
+# def test_get_with_owner_guid_2_calls():
+#     client = Client()
+#     contents_1 = Content.get(client, owner_guid="d03a6b7a-c818-4e40-8ef9-84ca567f9671")
+#     contents_2 = Content.get(client, owner_guid="d03a6b7a-c818-4e40-8ef9-84ca567f9671")
+#     assert len(contents_1) == len(contents_2)
 
 
 def test_get_one():
