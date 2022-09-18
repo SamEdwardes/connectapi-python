@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
 import datetime as dt
+from typing import List
+
+from pydantic import BaseModel
+
+import connectapi
+
 from .client import Client
 
 
@@ -33,10 +38,9 @@ class User(_UserBase):
         r.raise_for_status()
         return User(client=client, **r.json())
 
-    def get_my_content(self):
-        from .content import Content
+    def get_my_content(self) -> List[connectapi.content.Content]:
         with self.client() as _client:
             my_guid = _UserBase(**_client.get("/user").json()).guid
             r = _client.get(f"/content", params={"owner_guid": my_guid})
         r.raise_for_status()
-        return [Content(client=self.client, **i) for i in r.json()]
+        return [connectapi.content.Content(client=self.client, **i) for i in r.json()]

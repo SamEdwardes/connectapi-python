@@ -8,7 +8,7 @@ from rich import inspect, print
 
 from ._utils import remove_none_from_dict
 from .client import Client
-from .user import _UserBase
+import connectapi
 
 
 class ContentBase(BaseModel):
@@ -183,7 +183,7 @@ class Content(ContentBase):
     @classmethod
     def get_my_content(cls, client: Client) -> Content:
         with client() as _client:
-            my_guid = _UserBase(**_client.get("/user").json()).guid
+            my_guid = connectapi.user._UserBase(**_client.get("/user").json()).guid
             r = _client.get(f"/content", params={"owner_guid": my_guid})
         r.raise_for_status()
         return [Content(client=client, **i) for i in r.json()]
