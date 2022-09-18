@@ -8,8 +8,8 @@ import httpx
 class Client:
     """Create a connection to the Connect server.
     
-    Params
-    ------
+    Parameters
+    ----------
     connect_server: str | None
         The server endpoint. If `None` connectapi will look for an environment 
         variable `CONNECT_SERVER`. For example 'https://colorado.rstudio.com/rsc'.

@@ -175,13 +175,39 @@ class Content(ContentBase):
         client: Client, 
         content_guid: str,
     ) -> Content:
+        """Get a single piece of content based on the content's guid.
+
+        Parameters
+        ----------
+        client : Client
+            A connectapi Client object.
+        content_guid : str
+            The unique identifier for the content.
+
+        Returns
+        -------
+        Content
+            A connectapi Content object.
+        """    
         with client() as _client:
             r = _client.get(f"/content/{content_guid}")
         r.raise_for_status()
         return Content(client=client, **r.json())
     
     @classmethod
-    def get_my_content(cls, client: Client) -> Content:
+    def get_my_content(cls, client: Client) -> List[Content]:
+        """Get all of the content for the current user.
+
+        Parameters
+        ----------
+        client : Client
+            A connectapi Client object.
+
+        Returns
+        -------
+        List[Content]
+            A list of all content for the current user.
+        """             
         with client() as _client:
             my_guid = connectapi.user._UserBase(**_client.get("/user").json()).guid
             r = _client.get(f"/content", params={"owner_guid": my_guid})
@@ -221,7 +247,7 @@ class Content(ContentBase):
 #         Parameters
 #         ----------
 #         owner_guid : Optional[str], optional
-#             The unique identifier of the user who owns the content. By default None
+#             The unique identifier of the user who owns the co pntent. By default None
 #         name : Optional[str], 
 #             The content name specified when the content was created. Content 
 #             names are unique within the owning user's account, so a request that 
