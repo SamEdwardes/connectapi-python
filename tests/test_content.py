@@ -4,28 +4,28 @@ import pytest
 from connectapi import Client, Content
 from httpx import HTTPStatusError
 
+CONTENT_DATA = {
+    'access_type': 'acl',
+    'connection_timeout': 3600,
+    'description': 'This report calculates per-team statistics ...',
+    'idle_timeout': 5,
+    'init_timeout': 60,
+    'load_factor': 0.5,
+    'max_conns_per_process': 20,
+    'max_processes': 3,
+    'min_processes': 0,
+    'name': str(uuid4()),
+    'read_timeout': 3600,
+    'run_as': 'rstudio-connect',
+    'run_as_current_user': False,
+    'title': 'Quarterly Analysis of Team Velocity'
+}
 
 def test_content_create_and_delete():
     client = Client()
 
     # Create
-    data = {
-        'access_type': 'acl',
-        'connection_timeout': 3600,
-        'description': 'This report calculates per-team statistics ...',
-        'idle_timeout': 5,
-        'init_timeout': 60,
-        'load_factor': 0.5,
-        'max_conns_per_process': 20,
-        'max_processes': 3,
-        'min_processes': 0,
-        'name': str(uuid4()),
-        'read_timeout': 3600,
-        'run_as': 'rstudio-connect',
-        'run_as_current_user': False,
-        'title': 'Quarterly Analysis of Team Velocity'
-    }
-    content = Content.create(client, **data)
+    content = Content.create(client, **CONTENT_DATA)
     assert isinstance(content, Content)
     assert content.description == 'This report calculates per-team statistics ...'
     assert content.title == 'Quarterly Analysis of Team Velocity'
@@ -38,6 +38,26 @@ def test_content_create_and_delete():
         Content.get_one(client, content.guid)
 
 
+def test_content_update():
+    client = Client()
+
+    # Create
+    content = Content.create(client, **CONTENT_DATA)
+    assert isinstance(content, Content)
+    assert content.description == 'This report calculates per-team statistics ...'
+    assert content.title == 'Quarterly Analysis of Team Velocity'
+
+    # Update
+    content.title = "This is a new title"
+    content.description = "This is a new description"
+    content.update()
+    
+    updated_content = Content.get_one(client, content.guid)
+    assert updated_content.title == "This is a new title"
+    assert updated_content.description == "This is a new description"
+
+    # Delete
+    updated_content.delete(force=True)
 
 
 def test_get_with_owner_guid():
