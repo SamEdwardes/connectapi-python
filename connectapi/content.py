@@ -5,8 +5,10 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 from rich import inspect, print
+from rich.prompt import Confirm
 
 from ._utils import remove_none_from_dict
+from ._console import console
 from .client import Client
 import connectapi
 
@@ -115,6 +117,58 @@ class Content(ContentBase):
     class Config:
         arbitrary_types_allowed = True
 
+        
+    def update(self):
+        editable_fields = {
+            "name",
+            "title",
+            "description",
+            "access_type",
+            "owner_guid",
+            "connection_timeout",
+            "read_timeout",
+            "init_timeout",
+            "idle_timeout",
+            "max_processes",
+            "min_processes",
+            "max_conns_per_process",
+            "load_factor",
+            "run_as",
+            "run_as_current_user"
+        }
+
+        with self.client() as client:
+            data = self.json(include=editable_fields, exclude_none=True)
+            r = client.patch(url=f"/content/{self.guid}", data=data)
+        inspect(r)
+        r.raise_for_status()
+
+        # Update self with the response.
+        for key, value in r.json().items():
+            if key in self.dict():
+                self.__setattr__(key, value)
+
+        return self
+
+    
+    def delete(self, force=False) -> Content:
+        if force == False:
+            delete = Confirm.ask(
+                f"[bold red]Are you sure you want to delete[/] [yellow italic]'{self.dict(include={'title', 'guid'})}[/][bold red]?",
+                console=console
+            )
+        else:
+            console.print(f"[bold red]Deleting[/] [yellow italic]'{self.dict(include={'title', 'guid'})}")
+            delete = True
+        if delete:
+            with self.client() as client:
+                r = client.delete(url=f"/content/{self.guid}")
+            r.raise_for_status()
+            console.print("Content successfully deleted.")
+        else:
+            console.print("Content NOT deleted.")
+
+
     @classmethod
     def create(
         cls,
@@ -156,6 +210,7 @@ class Content(ContentBase):
 
         r.raise_for_status()
         return cls(client=client, **r.json())
+
     
     @classmethod
     def get(

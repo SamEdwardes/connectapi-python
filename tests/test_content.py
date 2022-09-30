@@ -5,8 +5,10 @@ from connectapi import Client, Content
 from httpx import HTTPStatusError
 
 
-def test_content_create():
+def test_content_create_and_delete():
     client = Client()
+
+    # Create
     data = {
         'access_type': 'acl',
         'connection_timeout': 3600,
@@ -27,6 +29,15 @@ def test_content_create():
     assert isinstance(content, Content)
     assert content.description == 'This report calculates per-team statistics ...'
     assert content.title == 'Quarterly Analysis of Team Velocity'
+
+    # Delete
+    content.delete(force=True)
+
+    # Verify that content is gone.
+    with pytest.raises(HTTPStatusError) as error:
+        Content.get_one(client, content.guid)
+
+
 
 
 def test_get_with_owner_guid():
@@ -58,7 +69,6 @@ def test_get_one():
     content = Content.get_one(client, content_guid=guid)
     assert isinstance(content, Content)
     assert content.guid == guid
-
 
 
 
