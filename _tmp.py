@@ -63,7 +63,7 @@ content = Content.create(client, **data)
 
 # %%
 # delete
-content.delete(force=True)
+content.delete()
 
 # %%
 # content = Content.get_one(client, "481ea207-367e-448b-a4c9-0da1acb5edcc")

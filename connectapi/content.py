@@ -104,7 +104,7 @@ class Content(ContentBase):
     
     >>> from connectapi import Client, Content
     >>> client = Client()
-    >>> contents = Content.get(client, owner_guid="d03a6b7a-c818-4e40-8ef9-84ca567f9671")
+    >>> contents = Content.get_many(client, owner_guid="d03a6b7a-c818-4e40-8ef9-84ca567f9671")
 
     Get one specific piece of content.
 
@@ -213,7 +213,7 @@ class Content(ContentBase):
 
     
     @classmethod
-    def get(
+    def get_many(
         cls, 
         client: Client, 
         owner_guid: Optional[str] = None,

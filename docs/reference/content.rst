@@ -9,7 +9,7 @@ From connectapi import Content
     :toctree: content-api
 
     Content
-    Content.get
+    Content.get_many
     Content.get_one
     Content.get_my_content
     Content.create
