@@ -8,12 +8,15 @@ documentation = "https://connectapi-python.netlify.app"
 repository = "https://github.com/SamEdwardes/connectapi-python"
 keywords = ["rstudio", "connect", "posit", "api"]
 
+[tool.poetry.scripts]
+connectapi = "connectapi.cli:app"
+
 [tool.poetry.dependencies]
 python = "^3.9"
 pydantic = "^1.10.2"
 httpx = "^0.23.0"
 rich = "^12.5.1"
-
+typer = {extras = ["all"], version = "^0.6.1"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.3"

@@ -4,12 +4,12 @@
 format: jb-book
 root: index.ipynb
 parts:
-  - caption: Tutorials
+  - caption: Tutorial
     chapters:
-    - file: tutorials/installation.md
-    - file: tutorials/client.ipynb
-    - file: tutorials/user.ipynb
-    - file: tutorials/content.ipynb
+    - file: tutorial/installation.md
+    - file: tutorial/client.ipynb
+    - file: tutorial/user.ipynb
+    - file: tutorial/content.ipynb
   - caption: Reference
     chapters:
     - file: reference/overview.rst

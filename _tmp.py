@@ -34,36 +34,36 @@
 
 # content.update()
 # %%
-from connectapi import Client, User, Content
-from rich import print, inspect
-from uuid import uuid4
+# from connectapi import Client, User, Content
+# from rich import print, inspect
+# from uuid import uuid4
 
-client = Client()
+# client = Client()
 # %%
 
 
 # Create
-data = {
-        'access_type': 'acl',
-        'connection_timeout': 3600,
-        'description': 'This report calculates per-teamy statistics ...',
-        'idle_timeout': 5,
-        'init_timeout': 60,
-        'load_factor': 0.5,
-        'max_conns_per_process': 20,
-        'max_processes': 3,
-        'min_processes': 0,
-        'name': str(uuid4()),
-        'read_timeout': 3600,
-        'run_as': 'rstudio-connect',
-        'run_as_current_user': False,
-        'title': 'Quarterly Analysis of Team Velocity'
-    }
-content = Content.create(client, **data)
+# data = {
+#         'access_type': 'acl',
+#         'connection_timeout': 3600,
+#         'description': 'This report calculates per-teamy statistics ...',
+#         'idle_timeout': 5,
+#         'init_timeout': 60,
+#         'load_factor': 0.5,
+#         'max_conns_per_process': 20,
+#         'max_processes': 3,
+#         'min_processes': 0,
+#         'name': str(uuid4()),
+#         'read_timeout': 3600,
+#         'run_as': 'rstudio-connect',
+#         'run_as_current_user': False,
+#         'title': 'Quarterly Analysis of Team Velocity'
+#     }
+# content = Content.create(client, **data)
 
 # %%
 # delete
-content.delete()
+# content.delete()
 
 # %%
 # content = Content.get_one(client, "481ea207-367e-448b-a4c9-0da1acb5edcc")
@@ -73,3 +73,14 @@ content.delete()
 
 # for content in my_content:
 #     content.delete()
+
+from connectapi import Client, Content
+from connectapi.content import Bundle
+
+client = Client()
+content = Content.create(
+    client, 
+    directory="tests/content/shiny-for-r",
+    title='A test shiny app',
+    description='This report calculates per-team statistics'
+)

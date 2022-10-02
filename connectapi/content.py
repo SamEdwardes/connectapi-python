@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import List, Optional, Union
+import time
+import tarfile
+from pathlib import Path
+from typing import List, Optional, Set, Union
+from uuid import uuid4
+import sys
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from rich import inspect, print
+from rich.live import Live
 from rich.prompt import Confirm
 
-from ._utils import remove_none_from_dict
-from ._console import console
-from .client import Client
 import connectapi
+
+from ._console import console
+from ._utils import remove_none_from_dict
+from .client import Client
 
 
 class ContentBase(BaseModel):
@@ -46,6 +53,12 @@ class ContentBase(BaseModel):
     role: Optional[str] = None
     id: Optional[str] = None
 
+    @validator('name')
+    def name_must_contain_space(cls, v):
+        if v is None:
+            return uuid4()
+        else:
+            return v
 
 class Content(ContentBase):
     """Manage content on Connect.
@@ -113,44 +126,39 @@ class Content(ContentBase):
     >>> content = Content.get_one(client, content_guid="241fe2cd-6eba-4a79-9aa3-6e6fe28c5714")
     """    
     client: Client
+    editable_fields: Set[str] = {
+        "name",
+        "title",
+        "description",
+        "access_type",
+        "owner_guid",
+        "connection_timeout",
+        "read_timeout",
+        "init_timeout",
+        "idle_timeout",
+        "max_processes",
+        "min_processes",
+        "max_conns_per_process",
+        "load_factor",
+        "run_as",
+        "run_as_current_user"
+    }
 
     class Config:
         arbitrary_types_allowed = True
 
         
     def update(self):
-        editable_fields = {
-            "name",
-            "title",
-            "description",
-            "access_type",
-            "owner_guid",
-            "connection_timeout",
-            "read_timeout",
-            "init_timeout",
-            "idle_timeout",
-            "max_processes",
-            "min_processes",
-            "max_conns_per_process",
-            "load_factor",
-            "run_as",
-            "run_as_current_user"
-        }
-
         with self.client() as client:
-            data = self.json(include=editable_fields, exclude_none=True)
+            data = self.json(include=self.get_editable_fields(), exclude_none=True)
             r = client.patch(url=f"/content/{self.guid}", data=data)
-        inspect(r)
         r.raise_for_status()
-
         # Update self with the response.
         for key, value in r.json().items():
             if key in self.dict():
                 self.__setattr__(key, value)
-
         return self
 
-    
     def delete(self, force=False) -> Content:
         if force == False:
             delete = Confirm.ask(
@@ -168,12 +176,40 @@ class Content(ContentBase):
         else:
             console.print("Content NOT deleted.")
 
+    def get_dashboard_view_url(self):
+        return f"{self.client.connect_server}/connect/#/apps/{self.guid}"
+    
+    def get_solo_view_url(self):
+        "https://colorado.rstudio.com/rsc/demo-quarto-colorado-report-r/"
+        return f"{self.client.connect_server}/{self.guid}"
+
+    @classmethod
+    def get_editable_fields(cls) -> Set:
+        return {
+            "name",
+            "title",
+            "description",
+            "access_type",
+            "owner_guid",
+            "connection_timeout",
+            "read_timeout",
+            "init_timeout",
+            "idle_timeout",
+            "max_processes",
+            "min_processes",
+            "max_conns_per_process",
+            "load_factor",
+            "run_as",
+            "run_as_current_user"
+        }
+
 
     @classmethod
     def create(
         cls,
         client: Client,
-        title: str,
+        directory: Optional[str] = None,
+        title: Optional[str] = None,
         description: Optional[str] = None,
         name: Optional[str] = None,
         access_type: Optional[str] = 'acl',
@@ -188,30 +224,83 @@ class Content(ContentBase):
         run_as: Optional[str] = None,
         run_as_current_user: bool = False
     ) -> Content:
+        content_input = ContentBase(
+            title=title,
+            description=description,
+            name=name,
+            access_type=access_type,
+            connection_timeout=connection_timeout,
+            read_timeout=read_timeout,
+            init_timeout=init_timeout,
+            idle_timeout=idle_timeout,
+            max_processes=max_processes,
+            min_processes=min_processes,
+            max_conns_per_process=max_conns_per_process,
+            load_factor=load_factor,
+            run_as=run_as,
+            run_as_current_user=run_as_current_user,
+        )
         with client() as _client:
-            content = ContentBase(
-                title=title,
-                description=description,
-                name=name,
-                access_type=access_type,
-                connection_timeout=connection_timeout,
-                read_timeout=read_timeout,
-                init_timeout=init_timeout,
-                idle_timeout=idle_timeout,
-                max_processes=max_processes,
-                min_processes=min_processes,
-                max_conns_per_process=max_conns_per_process,
-                load_factor=load_factor,
-                run_as=run_as,
-                run_as_current_user=run_as_current_user,
+            console.rule("Creating new content")
+            response_content = _client.post(
+                url="/content", 
+                content=content_input.json(exclude_none=True)
             )
-            data = content.json(exclude_none=True)
-            r = _client.post(url="/content", data=data)
+            response_content.raise_for_status()
+            content = cls(client=client, **response_content.json())
+            print(f"[bold green]Content successfully created")
+            print(content.dict(include={'guid', 'title'}))
+            
+            if directory:
+                console.rule("Uploading bundle")
+                bundle = Bundle(directory)
+                bundle_data = bundle.bundle_path.read_bytes()
+                response_bundle = _client.post(
+                    f"/experimental/content/{content.guid}/upload",
+                    data=bundle_data
+                )
+                response_bundle.raise_for_status()
+                
+                class BundleUploadResponse(BaseModel):
+                    bundle_id: str
+                    bundle_size: int
 
-        r.raise_for_status()
-        return cls(client=client, **r.json())
+                bundle_upload_response = BundleUploadResponse(**response_bundle.json())
 
-    
+                console.rule("Deploying bundle")
+                console.print(f"Deploying bundle '{bundle_upload_response.bundle_id}'")
+                response_deploy = _client.post(
+                    f"/experimental/content/{content.guid}/deploy",
+                    data = bundle_upload_response.json(include={'bundle_id'})
+                )
+                task_id: str = response_deploy.json()["task_id"]
+                response_deploy.raise_for_status()
+
+                with console.status("Deploying..."):
+                    logs = []
+                    for i in range(20):
+                        time.sleep(2)
+                        task_response = _client.get(f"/tasks/{task_id}")
+                        new_logs = task_response.json()["output"]
+                        # if the logs have not changed do nothing.
+                        if new_logs == logs:
+                            continue
+                        # trim the logs to only show new output.
+                        logs = new_logs[len(logs):]
+                        for i in logs:
+                                console.print(f"[yan dim]{i}")
+                        if task_response.json()['finished']:
+                            console.log("[bold green]Content successfully deployed")
+                            break
+
+
+        console.rule("Deployment details")
+        console.print("[bold green]New content created:")
+        console.print(f"- Dashboard view url: {content.get_dashboard_view_url()}")
+        console.print(f"- Solo view url: {content.get_solo_view_url()}")
+
+        return content
+
     @classmethod
     def get_many(
         cls, 
@@ -270,134 +359,28 @@ class Content(ContentBase):
         return [Content(client=client, **i) for i in r.json()]
 
 
-# class ContentEndpoint:
-#     """Get information related to your content deployed on Connect.
+class Bundle:
+    directory: str
+    bundle_path: Path
 
-#     The ContentEndpoint class mirrors the endpoints described in 
-#     https://docs.rstudio.com/connect/api/#tag--Content.
-
-#     Params
-#     ------
-#     client: httpx.Client
-#         An httpx.Client object.
-#     """
-#     def __init__(self, client: httpx.Client):
-#         self.client = client
-
-#     def list_items(
-#         self, owner_guid: Optional[str] = None, name: Optional[str] = None
-#     ) -> List[Content]:
-#         """List all content items visible to the requesting user.
-
-#         Authenticated access from a user is required. If an "administrator" role 
-#         is used, then all content items will be returned regardless of the 
-#         visibility to the requesting user.
-
-#         Information about the target environment is populated for users with 
-#         "publisher" and "administrator" role; it is suppressed for viewers.
-
-#         See the official API docs for more details:
-#         https://docs.rstudio.com/connect/api/#get-/v1/content.
-
-#         Parameters
-#         ----------
-#         owner_guid : Optional[str], optional
-#             The unique identifier of the user who owns the co pntent. By default None
-#         name : Optional[str], 
-#             The content name specified when the content was created. Content 
-#             names are unique within the owning user's account, so a request that 
-#             specifies a non-empty name and owner_guid will return at most one 
-#             content item.
-
-#         Returns
-#         -------
-#         List[Content]
-#             A list of Content objects.
-#         """        
-#         class Params(BaseModel):
-#             owner_guid: Optional[str] = None
-#             name: Optional[str] = None
-
-#         with self.client as client:
-#             params = Params(owner_guid=owner_guid, name=name)
-#             r = client.get(url="/content", params=params.dict(exclude_none=True))
-
-#         r.raise_for_status()
-#         return [Content(**i) for i in r.json()]
-
-#     def create_item(
-#         self,
-#         name: str,
-#         title: str,
-#         description: str,
-#         access_type: str,
-#         connection_timeout: int,
-#         read_timeout: int,
-#         init_timeout: int,
-#         idle_timeout: int,
-#         max_processes: int,
-#         min_processes: int,
-#         max_conns_per_process: int,
-#         load_factor: float,
-#         run_as: str,
-#         run_as_current_user: str
-#     ):
-#         class Data(BaseModel):
-#             name: str
-#             title: str
-#             description: str
-#             access_type: str
-#             connection_timeout: int
-#             read_timeout: int
-#             init_timeout: int
-#             idle_timeout: int
-#             max_processes: int
-#             min_processes: int
-#             max_conns_per_process: int
-#             load_factor: float
-#             run_as: str
-#             run_as_current_user: str
-
-#         with self.client as client:
-#             data = Data(
-#                 name=name,
-#                 title=title,
-#                 description=description,
-#                 access_type=access_type,
-#                 connection_timeout=connection_timeout,
-#                 read_timeout=read_timeout,
-#                 init_timeout=init_timeout,
-#                 idle_timeout=idle_timeout,
-#                 max_processes=max_processes,
-#                 min_processes=min_processes,
-#                 max_conns_per_process=max_conns_per_process,
-#                 load_factor=load_factor,
-#                 run_as=run_as,
-#                 run_as_current_user=run_as_current_user
-#             )
-#             r = client.post(url="/content", data=data.dict(exclude_none=True))
-
-#         r.raise_for_status()
-#         return r
-    
-#     def get_details(self, guid: str) -> Content:
-#         """_summary_
-
-#         Parameters
-#         ----------
-#         guid : str
-#             _description_
-
-#         See the official API docs for more details: 
-#         https://docs.rstudio.com/connect/api/#get-/v1/content/%7Bguid%7D
-
-#         Returns
-#         -------
-#         Content
-#             _description_
-#         """
-#         with self.client as client:
-#             r = client.get(url=f"/content/{guid}")
-#         r.raise_for_status()
-#         return Content(**r.json())
-
+    def __init__(self,directory: str = "."):
+        self.directory = directory
+        path = Path(directory)
+        if Path(path, "manifest.json").exists() == False:
+            raise ValueError("No manifest.json file found")
+        self.bundle_path = self._create_tarball(directory)
+        
+    def _create_tarball(self, directory: str) -> Path:
+        path = Path(directory)
+        r_files = list(path.glob('**/*.R'))
+        unique_id = str(uuid4())
+        # unique_id = "1"
+        tarball_name = f"bundle-{unique_id}.tar.gz"
+        bundle_path = Path(path, tarball_name)
+        console.print(f"Adding files to tarball [italic]{bundle_path}")
+        with tarfile.open(bundle_path, "w:gz") as tar:
+            files_to_add = [path / "manifest.json"] + r_files
+            for f in files_to_add :
+                console.print(f"- {f}")
+                tar.add(f, f.name)
+        return bundle_path

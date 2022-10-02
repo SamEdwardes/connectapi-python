@@ -10,8 +10,12 @@ format:
 docs-open:
     open docs/_build/html/index.html
 
+docs-clear-output:
+    poetry run jupyter nbconvert --clear-output --inplace docs/**/*.ipynb
+
 docs-build:
     rm -rf docs/_build
+    poetry run jupyter nbconvert --clear-output --inplace docs/**/*.ipynb
     docker build -t connectapi .
     docker run -it --rm \
         -v $(pwd):/connectapi \
